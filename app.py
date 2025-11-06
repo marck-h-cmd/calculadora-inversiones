@@ -51,14 +51,11 @@ if modulo == "📈 Crecimiento de Cartera":
 
 elif modulo == "🏦 Proyección de Retiro":
     # MÓDULO B: PROYECCIÓN DE RETIRO
-    show_mod_b_form()   
-elif modulo == "🏦 Evaluación de Cartera":
-    from ui.forms.form_evaluacion_cartera import show_evaluacion_cartera
-    show_evaluacion_cartera()
+    show_mod_b_form()
+
 else:  # Valoración de Bonos
     # MÓDULO C: VALORACIÓN DE BONOS
     show_mod_c_form()
-
 
 
 show_footer()

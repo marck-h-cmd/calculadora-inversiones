@@ -8,7 +8,7 @@ def show_sidebar():
         
         modulo = st.radio(
             "Selecciona un módulo:",
-            ["📈 Crecimiento de Cartera", "🏦 Proyección de Retiro", "📊 Valoración de Bonos","🏦 Evaluación de Cartera"],
+            ["📈 Crecimiento de Cartera", "🏦 Proyección de Retiro", "📊 Valoración de Bonos"],
             label_visibility="collapsed"
         )
         
