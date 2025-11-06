@@ -4,11 +4,11 @@ import streamlit as st
 def convertir_tea_a_periodica(tea, frecuencia):
     """Convierte TEA a tasa periódica"""
     periodos = {
-        'Mensual': 12, 'Bimestral': 6, 'Trimestral': 4,
-        'Cuatrimestral': 3, 'Semestral': 2, 'Anual': 1
+        'Mensual': 30, 'Bimestral': 60, 'Trimestral': 90,
+        'Cuatrimestral': 120, 'Semestral': 180, 'Anual': 360
     }
-    n = periodos.get(frecuencia, 12)
-    return (1 + tea / 100) ** (1 / n) - 1
+    n = periodos.get(frecuencia, 30)
+    return (1 + tea/100)**(n / 360) - 1
 
 def formato_moneda(valor):
     """Formatea valores en dólares"""

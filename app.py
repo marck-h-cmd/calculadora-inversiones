@@ -3,13 +3,21 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from utils.utils import convertir_tea_a_periodica, formato_moneda, mostrar_ayuda
-from ui.forms.form_mod_a import show_mod_a_form
-from ui.forms.form_mod_b import show_mod_b_form
-from ui.forms.form_mod_c import show_mod_c_form
+from ui.forms.inversiones import show_inversiones
+from ui.forms.bonos import show_bonos
 from ui.components.sidebar import show_sidebar
 from ui.components.footer import show_footer
+import base64
+import streamlit.components.v1 as components
+import smtplib
+
+
+
+
 # Configuración de la página
 st.set_page_config(
     page_title="Simulador Financiero",
@@ -31,31 +39,73 @@ st.markdown("""
     }
     .help-text {
         font-size: 0.85em;
-        color: #666;
         font-style: italic;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # Título principal
-st.title("💰 Simulador Financiero Interactivo")
-st.markdown("### Planifica tu futuro financiero con proyecciones precisas")
+st.title("Simulador Financiero")
+st.markdown("##### UNT - Finanzas Corporativas - Grupo 6")
+
+with st.sidebar:
+  nombre = st.text_input("Ingrese su nombre")
+  email = st.text_input("Ingrese su correo electrónico")
+  if st.button("Enviar a mi correo"):
+    if email:
+        html_code = f"""
+        <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+        <script>
+          (function(){{
+            emailjs.init(" "); // tu Public Key
+
+            emailjs.send(
+              " ", // service key
+              " ", // template key
+              {{
+                to_name: "{nombre}",
+                to_email: "{email}",
+                message: "Este es un mensaje de prueba",
+                extra_summary: "Resumen de prueba"
+              }}
+            ).then(function(response){{
+              alert("✅ Correo enviado!");
+              console.log(response);
+            }}, function(error){{
+              alert("❌ Error al enviar: " + JSON.stringify(error));
+              console.log(error);
+            }});
+          }})();
+        </script>
+        """
+        components.html(html_code, height=0)
+        st.success("Intentando enviar correo, revisa tu bandeja de entrada.")
+    else:
+        st.warning("⚠️ Ingresa un correo válido primero.")
+
+  st.divider()
+
+  if nombre:
+      st.markdown(f"<h3>Bienvenido(a) <b>{nombre}</b>. ¿Qué desea hacer hoy?</h3>", unsafe_allow_html=True)
+  else:
+      nombre = "Usuario"
+      st.markdown(f"<h3>Bienvenido(a) <b>{nombre}</b>. ¿Qué desea hacer hoy?</h3>", unsafe_allow_html=True)
+
+  modulo = st.radio(
+      "Seleccione un modo:",
+      ["📈 Inversiones", "📊 Bonos"]
+  )
 
 
-modulo = show_sidebar()
 
-
-if modulo == "📈 Crecimiento de Cartera":
+if modulo == "📈 Inversiones":          # INVERSIONES
     # MÓDULO A: CRECIMIENTO DE CARTERA
-    show_mod_a_form()
+    show_inversiones(nombre)
 
-elif modulo == "🏦 Proyección de Retiro":
-    # MÓDULO B: PROYECCIÓN DE RETIRO
-    show_mod_b_form()
+else:                                   # BONOS
+    show_bonos(nombre)
 
-else:  # Valoración de Bonos
-    # MÓDULO C: VALORACIÓN DE BONOS
-    show_mod_c_form()
+
 
 
 show_footer()

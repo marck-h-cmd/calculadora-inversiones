@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime
+
 def show_sidebar():
     # Sidebar para navegación
     with st.sidebar:
@@ -8,7 +9,7 @@ def show_sidebar():
         
         modulo = st.radio(
             "Selecciona un módulo:",
-            ["📈 Crecimiento de Cartera", "🏦 Proyección de Retiro", "📊 Valoración de Bonos"],
+            ["📈 Inversiones", "📊 Bonos"],
             label_visibility="collapsed"
         )
         

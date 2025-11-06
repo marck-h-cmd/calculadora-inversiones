@@ -249,7 +249,7 @@ def calcular_valoracion_bono(valor_nominal, tasa_cupon, frecuencia_bono, plazo_b
     }
 
 
-def show_mod_c_form():
+def show_bonos(nombre):
     st.header("📊 Módulo C: Valoración de Bonos")
     st.markdown("Calcula el valor presente de un bono según sus características y pagos periódicos.")
     
