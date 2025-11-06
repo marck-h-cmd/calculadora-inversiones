@@ -14,7 +14,15 @@ from ui.components.footer import show_footer
 import base64
 import streamlit.components.v1 as components
 import smtplib
+import base64
+import io
+import resend
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
+# Configuración de Resend
+resend.api_key = os.getenv('EMAIL_API_KEY')
 
 
 
@@ -48,54 +56,7 @@ st.markdown("""
 st.title("Simulador Financiero")
 st.markdown("##### UNT - Finanzas Corporativas - Grupo 6")
 
-with st.sidebar:
-  nombre = st.text_input("Ingrese su nombre")
-  email = st.text_input("Ingrese su correo electrónico")
-  if st.button("Enviar a mi correo"):
-    if email:
-        html_code = f"""
-        <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
-        <script>
-          (function(){{
-            emailjs.init(" "); // tu Public Key
-
-            emailjs.send(
-              " ", // service key
-              " ", // template key
-              {{
-                to_name: "{nombre}",
-                to_email: "{email}",
-                message: "Este es un mensaje de prueba",
-                extra_summary: "Resumen de prueba"
-              }}
-            ).then(function(response){{
-              alert("✅ Correo enviado!");
-              console.log(response);
-            }}, function(error){{
-              alert("❌ Error al enviar: " + JSON.stringify(error));
-              console.log(error);
-            }});
-          }})();
-        </script>
-        """
-        components.html(html_code, height=0)
-        st.success("Intentando enviar correo, revisa tu bandeja de entrada.")
-    else:
-        st.warning("⚠️ Ingresa un correo válido primero.")
-
-  st.divider()
-
-  if nombre:
-      st.markdown(f"<h3>Bienvenido(a) <b>{nombre}</b>. ¿Qué desea hacer hoy?</h3>", unsafe_allow_html=True)
-  else:
-      nombre = "Usuario"
-      st.markdown(f"<h3>Bienvenido(a) <b>{nombre}</b>. ¿Qué desea hacer hoy?</h3>", unsafe_allow_html=True)
-
-  modulo = st.radio(
-      "Seleccione un modo:",
-      ["📈 Inversiones", "📊 Bonos"]
-  )
-
+modulo,nombre,email=show_sidebar()
 
 
 if modulo == "📈 Inversiones":          # INVERSIONES

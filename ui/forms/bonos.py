@@ -15,7 +15,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 import io
-
+from utils.email import crear_template_email, enviar_email_con_pdf_resend
 
 def generar_pdf_bonos(valor_nominal, tasa_cupon, frecuencia_bono, plazo_bono,
                       tea_bono, df_flujos, valor_presente_total, cupon,
@@ -619,7 +619,6 @@ def show_bonos(nombre):
         )
 
     with col_btn2:
-        # Descarga PDF
         try:
             pdf_buffer = generar_pdf_bonos(
                 valor_nominal, tasa_cupon, frecuencia_bono, plazo_bono,
@@ -628,12 +627,54 @@ def show_bonos(nombre):
                 resultados['tasa_descuento_periodica']
             )
 
-            st.download_button(
-                label="📄 Descargar Reporte (PDF)",
-                data=pdf_buffer,
-                file_name=f"reporte_bono_{datetime.now().strftime('%Y%m%d')}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
+            col_pdf1, col_pdf2 = st.columns(2)
+            
+            with col_pdf1:
+                st.download_button(
+                    label="📄 Descargar PDF",
+                    data=pdf_buffer,
+                    file_name=f"reporte_bono_{datetime.now().strftime('%Y%m%d')}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+            
+            with col_pdf2:
+                if st.button("📧 Enviar por Email", use_container_width=True, key="email_bonos"):
+                    email_dest = st.session_state.get('email_destinatario')
+                    nombre_dest = st.session_state.get('nombre_usuario', 'Usuario')
+                    
+                    if email_dest:
+                        # Preparar métricas para el email
+                        diferencia = resultados['valor_presente_total'] - valor_nominal
+                        tipo_bono = "Premium" if diferencia > 0 else "Descuento" if diferencia < 0 else "A la Par"
+                        
+                        metricas = {
+                            "Valor Presente del Bono": formato_moneda(resultados['valor_presente_total']),
+                            "Valor Nominal": formato_moneda(valor_nominal),
+                            "Tipo de Bono": tipo_bono,
+                            "Tasa Cupón": f"{tasa_cupon}%",
+                            "Plazo": f"{plazo_bono} años",
+                            "Frecuencia de Pago": frecuencia_bono
+                        }
+                        
+                        # Crear copia del buffer
+                        pdf_buffer_email = io.BytesIO(pdf_buffer.getvalue())
+                        
+                        with st.spinner("📤 Enviando reporte..."):
+                            exito, resultado = enviar_email_con_pdf_resend(
+                                email_dest,
+                                nombre_dest,
+                                pdf_buffer_email,
+                                "Valoración de Bonos",
+                                metricas
+                            )
+                            
+                            if exito:
+                                st.success(f"✅ Reporte enviado exitosamente a **{email_dest}**")
+                            else:
+                                st.error(f"❌ Error al enviar: {resultado}")
+                    else:
+                        st.warning("⚠️ Por favor ingresa tu correo en el panel lateral")
+                    
         except Exception as e:
             st.error(f"Error al generar PDF: {str(e)}")
