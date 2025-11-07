@@ -5,6 +5,7 @@ import time
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime
+from utils.gemini import generar_analisis_inversiones
 
 def show_inversiones(nombre):
     st.divider()
@@ -93,7 +94,8 @@ def show_inversiones(nombre):
                 min_value=1.0, max_value=50.0, value=tea_cartera, step=0.1,
                 help="Rentabilidad esperada durante el retiro"
             )
-
+    else:
+        tea_retiro = None
     
     # Validaciones
     if monto_inicial == 0 and aporte_periodico == 0:
@@ -259,6 +261,38 @@ def show_inversiones(nombre):
                         delta=delta_texto,
                     )
 
+    st.divider()
+    st.markdown("<h3>🧠 Análisis Inteligente</h3>", unsafe_allow_html=True)
+    
+    # Botón para generar análisis
+    if st.button("📊 Obtener Análisis de Gemini", key="analisis_inversiones"):
+        with st.spinner("🤖 Gemini está analizando tu estrategia de inversión..."):
+            # Preparar datos para el análisis
+            datos_analisis = {
+                'edad_actual': edad_actual,
+                'monto_inicial': monto_inicial,
+                'tipo_impuesto': tipo_impuesto,
+                'aporte_periodico': aporte_periodico,
+                'frecuencia_aportes': frecuencia,
+                'tea': tea_cartera,
+                'tiempo_retiro': f"{plazo_anios} años" if plazo_o_jubilacion == 'Plazo (años)' else f"Jubilación a {edad_jubilacion} años",
+                'tipo_retiro': tipo_retiro,
+                'tea_retiro': tea_retiro if tipo_retiro == 'Pensión Mensual' else None,
+                'ingresos_totales': saldo_final,
+                'costos_totales': costos_totales,
+                'renta_total': ganancia_total,
+                'roi': (ganancia_total/costos_totales)*100,
+                'impuestos': impuesto,
+                'cobro_total': resultado if tipo_retiro == 'Cobro total' else None,
+                'pension_mensual': dividendos_finales if tipo_retiro == 'Pensión Mensual' else None,  
+                'cobro_mensual_bruto': cobroMensual if tipo_retiro == 'Pensión Mensual' else None,
+            }
+            
+            analisis = generar_analisis_inversiones(datos_analisis)
+            
+            # Mostrar análisis en un acordeón
+            with st.expander("📋 **Análisis Detallado de tu Estrategia de Inversión**", expanded=True):
+                st.markdown(analisis)
         
         # Tabla detallada
         st.divider()
@@ -539,6 +573,7 @@ def show_inversiones(nombre):
                 st.metric("🎁🤑 Cobro total a retirar", formato_moneda(esc1['resultado_cobro_total_neto']), delta="")
 
             with c2:
+                
                 st.markdown(f"**Opción B**")
                 st.metric("🎁🤑 Cobro total a retirar", formato_moneda(esc2['resultado_cobro_total_neto']), delta="")
 

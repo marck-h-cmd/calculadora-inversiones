@@ -16,8 +16,8 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 import io
 import plotly.io as pio
-from utils.email import crear_template_email, enviar_email_con_pdf_resend
-
+from utils.email import crear_template_email, enviar_email_con_pdf_gmail
+from utils.gemini import generar_analisis_bono
 
 def guardar_grafico_como_imagen(fig):
     """Convierte un gráfico de Plotly a imagen para el PDF"""
@@ -431,6 +431,8 @@ def show_bonos(nombre):
         resultados['cupon'], resultados['tasa_cupon_periodica'],
         resultados['tasa_descuento_periodica'], resultados['num_periodos_bono']
     )
+    
+   
 
     # GUARDAR GRÁFICOS PARA EL PDF
     # Necesitamos regenerar los gráficos aquí para capturarlos
@@ -732,7 +734,7 @@ def show_bonos(nombre):
                         pdf_buffer_email = io.BytesIO(pdf_buffer.getvalue())
 
                         with st.spinner("📤 Enviando reporte..."):
-                            exito, resultado = enviar_email_con_pdf_resend(
+                            exito, resultado = enviar_email_con_pdf_gmail(
                                 email_dest,
                                 nombre_dest,
                                 pdf_buffer_email,
