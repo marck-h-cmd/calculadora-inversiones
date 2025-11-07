@@ -1,6 +1,11 @@
-import resend
 import base64
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 from datetime import datetime
+import streamlit as st
 
 def crear_template_email(nombre_usuario, tipo_reporte, metricas_resumen):
     """Crea template HTML profesional para el email"""
@@ -110,12 +115,32 @@ def crear_template_email(nombre_usuario, tipo_reporte, metricas_resumen):
     return html_template
 
 
-def enviar_email_con_pdf_resend(email_destino, nombre_usuario, pdf_buffer, 
-                                 tipo_reporte, metricas_dict):
+def enviar_email_con_pdf_gmail(email_destino, nombre_usuario, pdf_buffer, 
+                                tipo_reporte, metricas_dict):
     """
-    Envía email usando Resend con PDF adjunto y template personalizado
+    Envía email usando Gmail SMTP con PDF adjunto y template personalizado
+    
+    Args:
+        email_destino: Email del destinatario
+        nombre_usuario: Nombre del usuario
+        pdf_buffer: Buffer con el PDF
+        tipo_reporte: Tipo de reporte (ej. "Valoración de Bonos")
+        metricas_dict: Diccionario con métricas para el resumen
+    
+    Returns:
+        tuple: (exito: bool, mensaje: str)
     """
     try:
+        # Obtener credenciales desde Streamlit secrets
+        gmail_user = st.secrets["gmail"]["user"]
+        gmail_password = st.secrets["gmail"]["password"]
+        
+        # Crear mensaje
+        mensaje = MIMEMultipart('alternative')
+        mensaje['From'] = f"Simulador Financiero <{gmail_user}>"
+        mensaje['To'] = email_destino
+        mensaje['Subject'] = f"📊 Tu Reporte de {tipo_reporte}"
+        
         # Crear HTML con las métricas
         metricas_html = ""
         for label, valor in metricas_dict.items():
@@ -129,28 +154,35 @@ def enviar_email_con_pdf_resend(email_destino, nombre_usuario, pdf_buffer,
         # Generar template completo
         html_content = crear_template_email(nombre_usuario, tipo_reporte, metricas_html)
         
-        # Preparar PDF para adjuntar
+        # Adjuntar HTML
+        parte_html = MIMEText(html_content, 'html')
+        mensaje.attach(parte_html)
+        
+        # Adjuntar PDF
         pdf_buffer.seek(0)
         pdf_bytes = pdf_buffer.read()
-        pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
         
-        # Nombre del archivo
+        parte_pdf = MIMEBase('application', 'pdf')
+        parte_pdf.set_payload(pdf_bytes)
+        encoders.encode_base64(parte_pdf)
+        
         filename = f"reporte_{tipo_reporte.lower().replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        parte_pdf.add_header('Content-Disposition', f'attachment; filename="{filename}"')
+        mensaje.attach(parte_pdf)
         
-        # Enviar email
-        params = {
-            "from": "Simulador Financiero <onboarding@resend.dev>",
-            "to": [email_destino],
-            "subject": f"📊 Tu Reporte de {tipo_reporte}",
-            "html": html_content,
-            "attachments": [{
-                "filename": filename,
-                "content": pdf_base64
-            }]
-        }
+        # Conectar y enviar
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(gmail_user, gmail_password)
+            server.send_message(mensaje)
         
-        email = resend.Emails.send(params)
-        return True, email
+        return True, f"Email enviado exitosamente a {email_destino}"
         
+    except KeyError as e:
+        return False, f"Error de configuración: Falta la clave {str(e)} en secrets.toml"
+    except smtplib.SMTPAuthenticationError:
+        return False, "Error de autenticación. Verifica tus credenciales de Gmail"
+    except smtplib.SMTPException as e:
+        return False, f"Error SMTP: {str(e)}"
     except Exception as e:
-        return False, str(e)
+        return False, f"Error inesperado: {str(e)}"

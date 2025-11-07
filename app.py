@@ -16,13 +16,12 @@ import streamlit.components.v1 as components
 import smtplib
 import base64
 import io
-import resend
+
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
-# Configuración de Resend
-resend.api_key = os.getenv('EMAIL_API_KEY')
+
 
 
 

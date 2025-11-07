@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import pandas as pd
 from datetime import datetime
 from utils.utils import formato_moneda
-
+from utils.gemini import generar_analisis_bono
 
 def mostrar_metricas_bono(valor_presente_total, valor_nominal, cupon):
     """Muestra las métricas principales del bono"""
@@ -291,6 +291,29 @@ def mostrar_resultados_completos(valor_nominal, tasa_cupon, frecuencia_bono,
         st.write(f"**Tasa de Descuento (TEA):** {tea_bono}%")
         st.write(f"**Tasa Descuento Periódica:** {tasa_descuento_periodica * 100:.4f}%")
 
+    st.divider()
+    st.markdown("<h3>🧠 Análisis Inteligente del Bono</h3>", unsafe_allow_html=True)
+    
+    # Botón para generar análisis
+    if st.button("📈 Obtener Análisis de Gemini", key="analisis_bono"):
+        with st.spinner("🤖 Gemini está analizando la valoración del bono..."):
+            # Preparar datos para el análisis
+            datos_analisis_bono = {
+                'valor_nominal': valor_nominal,
+                'tasa_cupon': tasa_cupon,
+                'frecuencia_pago': frecuencia_bono,
+                'plazo': plazo_bono,
+                'tasa_retorno': tea_bono,
+                'valor_presente': valor_presente_total,
+                'cupon_periodico': cupon
+            }
+            
+            analisis_bono = generar_analisis_bono(datos_analisis_bono)
+            
+            # Mostrar análisis en un acordeón
+            with st.expander("📋 **Análisis Detallado del Bono**", expanded=True):
+                st.markdown(analisis_bono)
+                
     # Gráficos
     st.divider()
     st.subheader("🔎 Análisis Visual")
