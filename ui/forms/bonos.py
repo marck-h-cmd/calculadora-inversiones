@@ -17,25 +17,17 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 import io
 import plotly.io as pio
 from utils.email import crear_template_email, enviar_email_con_pdf_gmail
-from utils.gemini import generar_analisis_bono
+
+
 
 def guardar_grafico_como_imagen(fig):
-    """Convierte un gráfico de Plotly a imagen para el PDF"""
-    try:
-        img_bytes = pio.to_image(fig, format='png', width=700, height=400, scale=2)
-        img_buffer = io.BytesIO(img_bytes)
-        img_buffer.seek(0)
-        return img_buffer
-    except Exception as e:
-        print(f"Error al convertir gráfico: {e}")
-        return None
-
+    """Función eliminada ya que no usamos gráficos en PDF"""
+    pass
 
 def generar_pdf_bonos(valor_nominal, tasa_cupon, frecuencia_bono, plazo_bono,
                       tea_bono, df_flujos, valor_presente_total, cupon,
-                      tasa_cupon_periodica, tasa_descuento_periodica,
-                      fig_flujos=None, fig_acumulado=None, fig_sensibilidad=None):
-    """Genera un PDF profesional con el reporte de valoración del bono"""
+                      tasa_cupon_periodica, tasa_descuento_periodica):
+    """Genera un PDF profesional SIN GRÁFICOS con el reporte de valoración del bono"""
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5 * inch, bottomMargin=0.5 * inch)
@@ -72,6 +64,7 @@ def generar_pdf_bonos(valor_nominal, tasa_cupon, frecuencia_bono, plazo_bono,
 
     # Título principal
     story.append(Paragraph("REPORTE DE VALORACIÓN DE BONOS", title_style))
+    story.append(Paragraph(f"Fecha de emisión: {datetime.now().strftime('%d/%m/%Y %H:%M')}", normal_style))
     story.append(Spacer(1, 0.3 * inch))
 
     # Sección 1: Parámetros del Bono
@@ -81,11 +74,11 @@ def generar_pdf_bonos(valor_nominal, tasa_cupon, frecuencia_bono, plazo_bono,
         ['Parámetro', 'Valor'],
         ['Valor Nominal', formato_moneda(valor_nominal)],
         ['Tasa Cupón (TEA)', f"{tasa_cupon}%"],
-        ['Tasa Cupón Periódica', f"{tasa_cupon_periodica * 100:.2f}%"],
+        ['Tasa Cupón Periódica', f"{tasa_cupon_periodica * 100:.4f}%"],
         ['Frecuencia de Pago', frecuencia_bono],
         ['Plazo', f"{plazo_bono} años"],
         ['Tasa de Descuento (TEA)', f"{tea_bono}%"],
-        ['Tasa de Descuento Periódica', f"{tasa_descuento_periodica * 100:.2f}%"],
+        ['Tasa de Descuento Periódica', f"{tasa_descuento_periodica * 100:.4f}%"],
         ['Cupón por Período', formato_moneda(cupon)]
     ]
 
@@ -115,7 +108,8 @@ def generar_pdf_bonos(valor_nominal, tasa_cupon, frecuencia_bono, plazo_bono,
         'Cuatrimestral': 3, 'Semestral': 2, 'Anual': 1
     }
     total_periodos = plazo_bono * periodos_bono[frecuencia_bono]
-    total_flujos = df_flujos['Flujo'].sum()
+
+    # Calcular diferencia y tipo de bono
     diferencia = valor_presente_total - valor_nominal
 
     if diferencia > 0:
@@ -131,7 +125,6 @@ def generar_pdf_bonos(valor_nominal, tasa_cupon, frecuencia_bono, plazo_bono,
     resumen_data = [
         ['Métrica', 'Valor'],
         ['Número Total de Períodos', str(total_periodos)],
-        ['Total de Flujos de Caja', formato_moneda(total_flujos)],
         ['Valor Presente del Bono', formato_moneda(valor_presente_total)],
         ['Valor Nominal', formato_moneda(valor_nominal)],
         ['Diferencia (VP - VN)', formato_moneda(diferencia)],
@@ -161,22 +154,50 @@ def generar_pdf_bonos(valor_nominal, tasa_cupon, frecuencia_bono, plazo_bono,
     story.append(interpretacion_para)
     story.append(Spacer(1, 0.3 * inch))
 
-    # Sección 3: Detalle de Flujos
-    story.append(PageBreak())
-    story.append(Paragraph("3. DETALLE DE FLUJOS DE CAJA", subtitle_style))
+    # Sección 3: Análisis de Resultados (REEMPLAZA LOS GRÁFICOS)
+    story.append(Paragraph("3. ANÁLISIS DE RESULTADOS", subtitle_style))
 
+    # Análisis textual en lugar de gráficos
+    analisis_texto = [
+        f"• <b>Valoración:</b> El bono tiene un valor presente de {formato_moneda(valor_presente_total)}",
+        f"• <b>Comparación con valor nominal:</b> {formato_moneda(diferencia)} ({tipo_bono})",
+        f"• <b>Rentabilidad:</b> La tasa cupón del {tasa_cupon}% se compara con la tasa de descuento del {tea_bono}%",
+        f"• <b>Flujos totales:</b> {total_periodos} pagos periódicos durante {plazo_bono} años",
+        f"• <b>Frecuencia:</b> Pagos {frecuencia_bono.lower()} con cupones de {formato_moneda(cupon)}"
+    ]
+
+    for item in analisis_texto:
+        story.append(Paragraph(item, normal_style))
+
+    story.append(Spacer(1, 0.3 * inch))
+
+    # Sección 4: Detalle Completo de Flujos
+    story.append(Paragraph("4. DETALLE COMPLETO DE FLUJOS DE CAJA", subtitle_style))
+
+    # Preparar datos de la tabla
     flujos_data = [['Período', 'Año', 'Flujo de Caja', 'Valor Presente']]
 
-    for _, row in df_flujos.head(20).iterrows():
+    # Filtrar solo filas que no son totales
+    df_flujos_normales = df_flujos[df_flujos['Es_Total'] == False]
+
+    for _, row in df_flujos_normales.iterrows():
         flujos_data.append([
-            str(int(row['Periodo'])),
-            f"{row['Año']}",
-            formato_moneda(row['Flujo']),
+            str(row['Periodo']),
+            f"{row['Año']:.2f}" if pd.notna(row['Año']) else '',
+            formato_moneda(row['Flujo']) if pd.notna(row['Flujo']) else '',
             formato_moneda(row['Valor Presente'])
         ])
 
-    if len(df_flujos) > 20:
-        flujos_data.append(['...', '...', '...', '...'])
+    # Agregar fila de totales de forma segura
+    fila_total_df = df_flujos[df_flujos['Es_Total'] == True]
+    if not fila_total_df.empty:
+        fila_total = fila_total_df.iloc[0]
+        flujos_data.append([
+            'TOTAL',
+            '',
+            '',
+            formato_moneda(fila_total['Valor Presente'])
+        ])
 
     tabla_flujos = Table(flujos_data, colWidths=[1 * inch, 1 * inch, 1.5 * inch, 1.5 * inch])
     tabla_flujos.setStyle(TableStyle([
@@ -186,20 +207,51 @@ def generar_pdf_bonos(valor_nominal, tasa_cupon, frecuencia_bono, plazo_bono,
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 11),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('BACKGROUND', (0, 1), (-1, -2), colors.beige),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#1e40af')),
+        ('TEXTCOLOR', (0, -1), (-1, -1), colors.whitesmoke),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
         ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
     ]))
 
     story.append(tabla_flujos)
 
-    if len(df_flujos) > 20:
-        nota = Paragraph(f"<i>Nota: Se muestran los primeros 20 períodos de {len(df_flujos)} totales.</i>",
-                         normal_style)
-        story.append(Spacer(1, 0.1 * inch))
-        story.append(nota)
+    # Nota explicativa
+    nota = Paragraph(
+        "<i>Nota: Período 0 representa el momento inicial de la inversión. "
+        "La fila TOTAL muestra el valor presente total de todos los flujos.</i>",
+        normal_style
+    )
+    story.append(Spacer(1, 0.1 * inch))
+    story.append(nota)
+
+    # Sección 5: Recomendaciones
+    story.append(Spacer(1, 0.3 * inch))
+    story.append(Paragraph("5. RECOMENDACIONES", subtitle_style))
+
+    if diferencia > 0:
+        recomendaciones = [
+            "✓ El bono es atractivo para compra (cotiza con prima)",
+            "✓ La tasa cupón es mayor que el rendimiento requerido",
+            "✓ Considerar mantener hasta el vencimiento"
+        ]
+    elif diferencia < 0:
+        recomendaciones = [
+            "✓ El bono puede ser una oportunidad de compra (cotiza con descuento)",
+            "✓ La tasa cupón es menor que el rendimiento requerido",
+            "✓ Posible ganancia de capital si las tasas disminuyen"
+        ]
+    else:
+        recomendaciones = [
+            "✓ El bono cotiza a su valor justo",
+            "✓ Rentabilidad equivalente al rendimiento requerido",
+            "✓ Decisión neutral de compra/venta"
+        ]
+
+    for rec in recomendaciones:
+        story.append(Paragraph(rec, normal_style))
 
     # Pie de página
     story.append(Spacer(1, 0.5 * inch))
@@ -217,7 +269,7 @@ def generar_pdf_bonos(valor_nominal, tasa_cupon, frecuencia_bono, plazo_bono,
 
 
 def calcular_valoracion_bono(valor_nominal, tasa_cupon, frecuencia_bono, plazo_bono, tea_bono):
-    """Función para calcular la valoración del bono"""
+    """Función para calcular la valoración del bono con período 0 = Año 1"""
     periodos_bono = {
         'Mensual': 12, 'Bimestral': 6, 'Trimestral': 4,
         'Cuatrimestral': 3, 'Semestral': 2, 'Anual': 1
@@ -235,21 +287,35 @@ def calcular_valoracion_bono(valor_nominal, tasa_cupon, frecuencia_bono, plazo_b
     flujos = []
     valor_presente_total = 0
 
-    for i in range(1, total_periodos_bono + 1):
-        if i == total_periodos_bono:
-            flujo = cupon + valor_nominal
+    # Períodos 0 a n-1 (flujos normales)
+    for i in range(total_periodos_bono):
+        if i == total_periodos_bono - 1:  # Último período
+            flujo = cupon + valor_nominal  # Cupón + principal
         else:
-            flujo = cupon
+            flujo = cupon  # Períodos intermedios: solo cupón
 
-        vp = flujo / ((1 + tasa_descuento_periodica) ** i)
+        # El período i corresponde al año (i + 1) / num_periodos_bono
+        año = (i + 1) / num_periodos_bono
+        vp = flujo / ((1 + tasa_descuento_periodica) ** (i + 1))
         valor_presente_total += vp
 
         flujos.append({
-            'Periodo': i,
-            'Año': datetime.now().year + round(i / num_periodos_bono, 2),
+            'Periodo': i,  # 0, 1, 2, ..., 14
+            'Año': round(año, 2),
             'Flujo': flujo,
-            'Valor Presente': vp
+            'Valor Presente': vp,
+            'Es_Total': False
         })
+
+    # FILA FINAL - Solo con el total del valor presente
+    # Usar NaN para mantener el tipo numérico de la columna Año
+    flujos.append({
+        'Periodo': total_periodos_bono,  # 15
+        'Año': float('nan'),  # Usar NaN en lugar de string
+        'Flujo': float('nan'),  # Usar NaN en lugar de string
+        'Valor Presente': valor_presente_total,
+        'Es_Total': True
+    })
 
     df_flujos = pd.DataFrame(flujos)
 
@@ -265,60 +331,103 @@ def calcular_valoracion_bono(valor_nominal, tasa_cupon, frecuencia_bono, plazo_b
 
 
 def show_bonos(nombre):
-    st.divider()
-    st.markdown("<br><h2>📊 Bonos</h2>"
-                "Calcula el valor presente de un bono según sus características y pagos periódicos."
-                , unsafe_allow_html=True)
-    
+    st.header("📊 Módulo C: Valoración de Bonos")
+    st.markdown("Calcula el valor presente de un bono según sus características y pagos periódicos.")
+
+    # SECCIÓN DE EJEMPLO EDUCATIVO
+    with st.expander("📚 Ejemplo Práctico: Evaluación de Cartera de Bonos", expanded=False):
+        st.markdown("""
+        ### 🎓 Guía de Evaluación de Bonos
+
+        **Objetivo:** Aprender a comparar múltiples bonos para tomar decisiones de inversión informadas.
+
+        #### 📖 Conceptos Fundamentales
+
+        **Características principales de un Bono:**
+
+        1. **💎 Valor Nominal (VN):** Es el valor facial del bono, la cantidad que el emisor se 
+           compromete a pagar al tenedor al vencimiento. También llamado "valor par".
+
+        2. **💰 Cupón (Tasa Cupón TEA):** Es la tasa de interés anual que el bono paga sobre su 
+           valor nominal. Por ejemplo, un bono de S/1,000 con cupón del 8% paga S/80 anuales.
+
+        3. **⏱️ Plazo:** Tiempo hasta el vencimiento del bono, expresado en años. Define cuándo 
+           se devolverá el valor nominal y cuántos pagos de cupón se recibirán.
+
+        4. **📅 Frecuencia de Pago:** Indica cada cuánto tiempo se pagan los cupones 
+           (mensual, trimestral, semestral, anual, etc.). Afecta el flujo de caja del inversor.
+
+        5. **📊 Rendimiento Requerido (Tasa de Descuento):** Es la tasa de retorno que el 
+           inversor exige para comprar el bono, basada en el riesgo y alternativas del mercado.
+
+        **Tipos de Valoración:**
+
+        - **🔺 Bono con Prima (Sobre Par):** VP > VN  
+          Ocurre cuando la tasa cupón es mayor que el rendimiento requerido.  
+          El bono es atractivo porque paga más que las alternativas del mercado.
+
+        - **🔻 Bono con Descuento (Bajo Par):** VP < VN  
+          Ocurre cuando la tasa cupón es menor que el rendimiento requerido.  
+          El bono debe venderse más barato para compensar su menor tasa de interés.
+
+        - **➖ Bono a la Par:** VP = VN  
+          Ocurre cuando la tasa cupón iguala el rendimiento requerido del mercado.
+
+        ---
+
+        #### 🔍 Ejemplo Práctico
+        Este ejercicio muestra cómo evaluar una cartera de 3 bonos corporativos diferentes,
+        comparando sus características y determinando cuál ofrece mejor valor.
+        """)
+
+        st.divider()
+        st.subheader("🔍 Comparación de Bonos Corporativos")
+
+        # (Tu código existente del ejemplo aquí)
 
     # SECCIÓN PRINCIPAL: VALORACIÓN INDIVIDUAL
     st.divider()
     st.subheader("⚙️ Valoración Individual de Bono")
 
-    # Formulario de inputs (tu código existente)
+    # Formulario de inputs
     with st.container():
         col1, col2, col3 = st.columns(3)
 
-    with col1:
-        valor_nominal = st.number_input(
-            "💎 Valor Nominal (USD)",
-            min_value=100.0, value=1000.0, step=100.0,
-            help="Valor que recibirás al vencimiento del bono"
-        )
+        with col1:
+            valor_nominal = st.number_input(
+                "💎 Valor Nominal (USD)",
+                min_value=100.0, value=1000.0, step=100.0,
+                help="Valor que recibirás al vencimiento del bono"
+            )
 
-    with col2:
-        frecuencia_bono = st.selectbox(
-            "Frecuencia de Pago",
-            ['Mensual', 'Bimestral', 'Trimestral', 'Cuatrimestral', 'Semestral', 'Anual'],
-            index=4,
-            help="Cada cuánto tiempo recibirás los cupones"
-        )
+            tasa_cupon = st.number_input(
+                "💰 Tasa Cupón (% TEA)",
+                min_value=0.0, max_value=50.0, value=6.0, step=0.1,
+                help="Tasa de interés que paga el bono anualmente"
+            )
 
-    with col3:
-        tea_bono = st.number_input(
-            "Tasa de Retorno Esperada (% TEA)",
-            min_value=0.0, max_value=50.0, value=7.0, step=0.1,
-            help="Tasa de descuento para calcular el valor presente"
-        )
+        with col2:
+            frecuencia_bono = st.selectbox(
+                "📅 Frecuencia de Pago",
+                ['Mensual', 'Bimestral', 'Trimestral', 'Cuatrimestral', 'Semestral', 'Anual'],
+                index=4,
+                help="Cada cuánto tiempo recibirás los cupones"
+            )
 
+            plazo_bono = st.number_input(
+                "⏱️ Plazo (Años)",
+                min_value=1, max_value=50, value=5, step=1,
+                help="Años hasta el vencimiento del bono"
+            )
 
-    col1, col2 = st.columns(2)
+        with col3:
+            tea_bono = st.number_input(
+                "📊 Tasa de Retorno Esperada (% TEA)",
+                min_value=0.0, max_value=50.0, value=7.0, step=0.1,
+                help="Tasa de descuento para calcular el valor presente"
+            )
 
-    with col1:
-        tasa_cupon = st.number_input(
-            "💰 Tasa Cupón (% TEA)",
-            min_value=0.0, max_value=50.0, value=6.0, step=0.1,
-            help="Tasa de interés que paga el bono anualmente"
-        )
-        
-    with col2:
-        plazo_bono = st.number_input(
-            "Plazo (Años)",
-            min_value=1, max_value=50, value=5, step=1,
-            help="Años hasta el vencimiento del bono"
-        )
-
-    # SECCIÓN 2: CÁLCULO AUTOMÁTICO (Sin botón, cálculo en tiempo real)
+    # CÁLCULOS
     st.divider()
 
     resultados = calcular_valoracion_bono(
@@ -332,28 +441,29 @@ def show_bonos(nombre):
         resultados['cupon'], resultados['tasa_cupon_periodica'],
         resultados['tasa_descuento_periodica'], resultados['num_periodos_bono']
     )
-    
-   
 
-    # GUARDAR GRÁFICOS PARA EL PDF
-    # Necesitamos regenerar los gráficos aquí para capturarlos
+    # PREPARAR DATOS PARA GRÁFICOS
+    df_para_graficos = resultados['df_flujos'][resultados['df_flujos']['Es_Total'] == False].copy()
 
-    # Gráfico 1: Flujos
+    # GRÁFICO 1: FLUJOS DE CAJA
+    st.subheader("💵 Flujos de Caja vs Valor Presente")
+
     fig_flujos = go.Figure()
     fig_flujos.add_trace(go.Bar(
-        x=resultados['df_flujos']['Año'],
-        y=resultados['df_flujos']['Flujo'],
+        x=df_para_graficos['Año'],
+        y=df_para_graficos['Flujo'],
         name='Flujo de Caja Nominal',
         marker_color='#3B82F6',
         hovertemplate='<b>Año:</b> %{x:.2f}<br><b>Flujo:</b> $%{y:,.2f}<extra></extra>'
     ))
     fig_flujos.add_trace(go.Bar(
-        x=resultados['df_flujos']['Año'],
-        y=resultados['df_flujos']['Valor Presente'],
+        x=df_para_graficos['Año'],
+        y=df_para_graficos['Valor Presente'],
         name='Valor Presente Descontado',
         marker_color='#10B981',
         hovertemplate='<b>Año:</b> %{x:.2f}<br><b>VP:</b> $%{y:,.2f}<extra></extra>'
     ))
+
     fig_flujos.update_layout(
         title={
             'text': 'Flujos de Caja vs Valor Presente por Período',
@@ -375,15 +485,15 @@ def show_bonos(nombre):
         )
     )
 
-    st.plotly_chart(fig_flujos, use_container_width=True)
+    st.plotly_chart(fig_flujos, use_container_width=True, key="grafico_flujos_bonos")
     st.caption("📊 **Leyenda:** Las barras azules muestran los flujos nominales (cupones + valor nominal al final). "
                "Las barras verdes representan el valor presente de cada flujo descontado a la tasa requerida. "
                "La diferencia ilustra el efecto del valor del dinero en el tiempo.")
 
-    # Gráfico 2: Acumulado
+    # GRÁFICO 2: VALOR PRESENTE ACUMULADO
     st.subheader("📈 Valor Presente Acumulado")
 
-    df_temp = resultados['df_flujos'].copy()
+    df_temp = df_para_graficos.copy()
     df_temp['VP Acumulado'] = df_temp['Valor Presente'].cumsum()
 
     fig_acumulado = go.Figure()
@@ -402,7 +512,7 @@ def show_bonos(nombre):
         showlegend=True
     ))
 
-    # Línea de referencia del Valor Nominal (con leyenda)
+    # Línea de referencia del Valor Nominal
     fig_acumulado.add_trace(go.Scatter(
         x=[df_temp['Año'].min(), df_temp['Año'].max()],
         y=[valor_nominal, valor_nominal],
@@ -437,12 +547,12 @@ def show_bonos(nombre):
         )
     )
 
-    st.plotly_chart(fig_acumulado, use_container_width=True)
+    st.plotly_chart(fig_acumulado, use_container_width=True, key="grafico_acumulado_bonos")
     st.caption("📈 **Leyenda:** La línea morada muestra cómo se acumula el valor presente de los flujos. "
                "La línea roja punteada es el valor nominal. Cuando se cruzan, los flujos futuros descontados "
                "igualan el valor nominal del bono.")
 
-    # ANÁLISIS DE SENSIBILIDAD CON LEYENDA
+    # ANÁLISIS DE SENSIBILIDAD
     st.divider()
     st.subheader("📉 Análisis de Sensibilidad a Tasas de Interés")
 
@@ -532,48 +642,47 @@ def show_bonos(nombre):
         )
     )
 
-    st.plotly_chart(fig_sensibilidad, use_container_width=True)
+    st.plotly_chart(fig_sensibilidad, use_container_width=True, key="grafico_sensibilidad_bonos")
     st.caption("📉 **Leyenda:** Este gráfico demuestra la relación inversa entre tasa de descuento y valor del bono. "
                "A medida que aumenta el rendimiento requerido (eje X), el valor presente del bono disminuye (eje Y). "
                "La línea verde vertical marca tu tasa actual, y la línea roja horizontal el valor nominal.")
 
     # COMPARACIÓN DE ESCENARIOS
-    st.divider()
-    st.markdown("### 🔄 Comparar con diferentes tasas")
-    col_comp1, col_comp2 = st.columns(2)
+    with st.expander("🔄 Comparar con diferentes tasas", expanded=False):
+        col_comp1, col_comp2 = st.columns(2)
 
-    with col_comp1:
-        tasa_escenario1 = st.number_input(
-            "🤩 Escenario Optimista - Tasa (%)",
-            min_value=0.0,
-            max_value=50.0,
-            value=tea_bono - 2.0 if tea_bono > 2.0 else 1.0,
-            step=0.1,
-            key="tasa_esc1"
+        with col_comp1:
+            tasa_escenario1 = st.number_input(
+                "Escenario Optimista - Tasa (%)",
+                min_value=0.0,
+                max_value=50.0,
+                value=tea_bono - 2.0 if tea_bono > 2.0 else 1.0,
+                step=0.1,
+                key="tasa_esc1_bonos"
+            )
+
+        with col_comp2:
+            tasa_escenario2 = st.number_input(
+                "Escenario Pesimista - Tasa (%)",
+                min_value=0.0,
+                max_value=50.0,
+                value=tea_bono + 2.0,
+                step=0.1,
+                key="tasa_esc2_bonos"
+            )
+
+        # Mostrar comparación
+        comparacion_escenarios(
+            tasa_escenario1, tasa_escenario2, tea_bono,
+            valor_nominal, resultados['cupon'], resultados['total_periodos_bono'],
+            frecuencia_bono, convertir_tea_a_periodica
         )
 
-    with col_comp2:
-        tasa_escenario2 = st.number_input(
-            "😫 Escenario Pesimista - Tasa (%)",
-            min_value=0.0,
-            max_value=50.0,
-            value=tea_bono + 2.0,
-            step=0.1,
-            key="tasa_esc2"
-        )
+        st.caption("💡 **Interpretación:** Los escenarios muestran cómo cambiaría el valor del bono "
+                   "si las condiciones del mercado mejoran (tasa baja) o empeoran (tasa alta). "
+                   "Esto te ayuda a evaluar el riesgo de tasa de interés.")
 
-    # Mostrar comparación
-    comparacion_escenarios(
-        tasa_escenario1, tasa_escenario2, tea_bono,
-        valor_nominal, resultados['cupon'], resultados['total_periodos_bono'],
-        frecuencia_bono, convertir_tea_a_periodica
-    )
-
-    st.caption("💡 **Interpretación:** Los escenarios muestran cómo cambiaría el valor del bono "
-                "si las condiciones del mercado mejoran (tasa baja) o empeoran (tasa alta). "
-                "Esto te ayuda a evaluar el riesgo de tasa de interés.")
-
-    # SECCIÓN 6: EXPORTACIÓN
+    # SECCIÓN: EXPORTACIÓN
     st.divider()
 
     col_btn1, col_btn2, col_btn3 = st.columns(3)
@@ -586,35 +695,32 @@ def show_bonos(nombre):
             data=csv,
             file_name=f"valoracion_bono_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
             mime="text/csv",
-            use_container_width=True
+            use_container_width=True,
+            key="descargar_csv_bonos"
         )
 
     with col_btn2:
         try:
-            # Generar PDF con los gráficos incluidos
+            # Generar PDF SIN gráficos
             pdf_buffer = generar_pdf_bonos(
                 valor_nominal, tasa_cupon, frecuencia_bono, plazo_bono,
                 tea_bono, resultados['df_flujos'], resultados['valor_presente_total'],
                 resultados['cupon'], resultados['tasa_cupon_periodica'],
-                resultados['tasa_descuento_periodica'],
-                fig_flujos=fig_flujos,
-                fig_acumulado=fig_acumulado,
-                fig_sensibilidad=fig_sensibilidad
+                resultados['tasa_descuento_periodica']
             )
 
             st.download_button(
-                label="📄 Descargar PDF con Gráficos",
+                label="📄 Descargar PDF Reporte",
                 data=pdf_buffer,
-                file_name=f"reporte_bono_{datetime.now().strftime('%Y%m%d')}.pdf",
+                file_name=f"reporte_bono_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                 mime="application/pdf",
-                use_container_width=True
+                use_container_width=True,
+                key="descargar_pdf_bonos"
             )
 
         except Exception as e:
             st.error(f"❌ Error al generar PDF: {str(e)}")
-            st.info("💡 Asegúrate de tener instaladas las librerías: `pip install reportlab kaleido`")
-
-
+            st.info("💡 El PDF contiene análisis detallado y tablas completas")
 
     with col_btn3:
         if st.button("📧 Enviar por Email", use_container_width=True, key="email_bonos"):

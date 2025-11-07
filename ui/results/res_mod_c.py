@@ -5,6 +5,7 @@ from datetime import datetime
 from utils.utils import formato_moneda
 from utils.gemini import generar_analisis_bono
 
+
 def mostrar_metricas_bono(valor_presente_total, valor_nominal, cupon):
     """Muestra las métricas principales del bono"""
     col1, col2, col3, col4 = st.columns(4)
@@ -29,7 +30,7 @@ def mostrar_metricas_bono(valor_presente_total, valor_nominal, cupon):
         else:
             tipo = "➖ A la Par"
             color = "off"
-        st.metric("Tipo de Bono", tipo, delta=formato_moneda(diferencia), delta_color="inverse")
+        st.metric("Tipo de Bono", tipo, delta=formato_moneda(diferencia))
 
 
 def mostrar_interpretacion(valor_presente_total, valor_nominal, tea_bono, tasa_cupon):
@@ -39,11 +40,13 @@ def mostrar_interpretacion(valor_presente_total, valor_nominal, tea_bono, tasa_c
     if valor_presente_total > valor_nominal:
         st.success(f"✅ **Bono con Prima (Sobre Par)**")
         st.write(f"- El VP es {formato_moneda(diferencia)} mayor que el valor nominal")
-        st.info(f"💡 **Razón:** La tasa cupón ({tasa_cupon:.2f}%) es mayor que la tasa de descuento ({tea_bono:.2f}%), por lo que el bono vale más que su valor nominal.")
+        st.info(
+            f"💡 **Razón:** La tasa cupón ({tasa_cupon:.2f}%) es mayor que la tasa de descuento ({tea_bono:.2f}%), por lo que el bono vale más que su valor nominal.")
     elif valor_presente_total < valor_nominal:
         st.warning(f"⚠️ **Bono con Descuento (Bajo Par)**")
         st.write(f"- El VP es {formato_moneda(diferencia)} menor que el valor nominal")
-        st.info(f"💡 **Razón:** La tasa cupón ({tasa_cupon:.2f}%) es menor que la tasa de descuento ({tea_bono:.2f}%), por lo que el bono vale menos que su valor nominal.")
+        st.info(
+            f"💡 **Razón:** La tasa cupón ({tasa_cupon:.2f}%) es menor que la tasa de descuento ({tea_bono:.2f}%), por lo que el bono vale menos que su valor nominal.")
     else:
         st.info("ℹ️ **Bono a la Par**")
         st.write("- El valor presente es igual al valor nominal")
@@ -121,20 +124,44 @@ def grafico_vp_acumulado(df_flujos, valor_nominal):
 
 
 def tabla_flujos(df_flujos):
-    """Muestra la tabla de flujos formateada"""
+    """Muestra la tabla de flujos con período 0 = Año 1 y última fila con total"""
     df_mostrar = df_flujos.copy()
-    df_mostrar['Flujo'] = df_mostrar['Flujo'].apply(formato_moneda)
-    df_mostrar['Valor Presente'] = df_mostrar['Valor Presente'].apply(formato_moneda)
 
+    # Preparar datos para mostrar
+    datos_tabla = []
+
+    for i, row in df_mostrar.iterrows():
+        if row['Es_Total']:  # Última fila (solo total)
+            datos_tabla.append({
+                'Periodo': f"{int(row['Periodo'])}",
+                'Año': '',  # String vacío en lugar de '-'
+                'Flujo': '',
+                'Valor Presente': f"{formato_moneda(row['Valor Presente'])} (Total)"
+            })
+        else:
+            datos_tabla.append({
+                'Periodo': str(int(row['Periodo'])),
+                'Año': f"{row['Año']:.2f}",
+                'Flujo': formato_moneda(row['Flujo']),
+                'Valor Presente': formato_moneda(row['Valor Presente'])
+            })
+
+    # Crear DataFrame para mostrar
+    df_display = pd.DataFrame(datos_tabla)
+
+    # Mostrar la tabla con estilo
     st.dataframe(
-        df_mostrar,
+        df_display,
         use_container_width=True,
         hide_index=True,
         column_config={
-            "Periodo": st.column_config.NumberColumn("Período", format="%d"),
-            "Año": st.column_config.NumberColumn("Año", format="%.2f"),
-            "Flujo": "Flujo de Caja",
-            "Valor Presente": "Valor Presente"
+            "Periodo": st.column_config.TextColumn(
+                "Período",
+                width="small"
+            ),
+            "Año": st.column_config.TextColumn("Año"),
+            "Flujo": st.column_config.TextColumn("Flujo de Caja"),
+            "Valor Presente": st.column_config.TextColumn("Valor Presente")
         }
     )
 
@@ -179,8 +206,7 @@ def comparacion_escenarios(tasa_escenario1, tasa_escenario2, tea_bono,
             f"📉 Escenario Optimista",
             formato_moneda(vp_esc1),
             delta=formato_moneda(diff1),
-            help=f"Tasa: {tasa_escenario1}%",
-            delta_color="inverse"
+            help=f"Tasa: {tasa_escenario1}%"
         )
 
     with col_res2:
@@ -189,8 +215,7 @@ def comparacion_escenarios(tasa_escenario1, tasa_escenario2, tea_bono,
             f"🎯 Escenario Base",
             formato_moneda(vp_actual),
             delta=formato_moneda(diff_actual),
-            help=f"Tasa: {tea_bono}%",
-            delta_color="inverse"
+            help=f"Tasa: {tea_bono}%"
         )
 
     with col_res3:
@@ -199,8 +224,7 @@ def comparacion_escenarios(tasa_escenario1, tasa_escenario2, tea_bono,
             f"📈 Escenario Pesimista",
             formato_moneda(vp_esc2),
             delta=formato_moneda(diff2),
-            help=f"Tasa: {tasa_escenario2}%",
-            delta_color="inverse"
+            help=f"Tasa: {tasa_escenario2}%"
         )
 
     return vp_esc1, vp_actual, vp_esc2
@@ -285,18 +309,18 @@ def mostrar_resultados_completos(valor_nominal, tasa_cupon, frecuencia_bono,
     with col1:
         st.write(f"**Valor Nominal:** {formato_moneda(valor_nominal)}")
         st.write(f"**Tasa Cupón (TEA):** {tasa_cupon}%")
-        st.write(f"**Tasa Cupón Periódica:** {tasa_cupon_periodica * 100:.2f}%")
+        st.write(f"**Tasa Cupón Periódica:** {tasa_cupon_periodica * 100:.4f}%")
         st.write(f"**Cupón por Período:** {formato_moneda(cupon)}")
 
     with col2:
         st.write(f"**Frecuencia:** {frecuencia_bono}")
         st.write(f"**Plazo:** {plazo_bono} años ({total_periodos_bono} períodos)")
         st.write(f"**Tasa de Descuento (TEA):** {tea_bono}%")
-        st.write(f"**Tasa Descuento Periódica:** {tasa_descuento_periodica * 100:.2f}%")
+        st.write(f"**Tasa Descuento Periódica:** {tasa_descuento_periodica * 100:.4f}%")
 
     st.divider()
     st.markdown("<h3>🧠 Análisis Inteligente del Bono</h3>", unsafe_allow_html=True)
-    
+
     # Botón para generar análisis
     if st.button("📈 Obtener Análisis de Gemini", key="analisis_bono"):
         with st.spinner("🤖 Gemini está analizando la valoración del bono..."):
@@ -310,13 +334,13 @@ def mostrar_resultados_completos(valor_nominal, tasa_cupon, frecuencia_bono,
                 'valor_presente': valor_presente_total,
                 'cupon_periodico': cupon
             }
-            
+
             analisis_bono = generar_analisis_bono(datos_analisis_bono)
-            
+
             # Mostrar análisis en un acordeón
             with st.expander("📋 **Análisis Detallado del Bono**", expanded=True):
                 st.markdown(analisis_bono)
-                
+
     # Gráficos
     st.divider()
     st.subheader("🔎 Análisis Visual")
