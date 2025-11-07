@@ -29,7 +29,7 @@ def mostrar_metricas_bono(valor_presente_total, valor_nominal, cupon):
         else:
             tipo = "➖ A la Par"
             color = "off"
-        st.metric("Tipo de Bono", tipo, delta=formato_moneda(diferencia))
+        st.metric("Tipo de Bono", tipo, delta=formato_moneda(diferencia), delta_color="inverse")
 
 
 def mostrar_interpretacion(valor_presente_total, valor_nominal, tea_bono, tasa_cupon):
@@ -179,7 +179,8 @@ def comparacion_escenarios(tasa_escenario1, tasa_escenario2, tea_bono,
             f"📉 Escenario Optimista",
             formato_moneda(vp_esc1),
             delta=formato_moneda(diff1),
-            help=f"Tasa: {tasa_escenario1}%"
+            help=f"Tasa: {tasa_escenario1}%",
+            delta_color="inverse"
         )
 
     with col_res2:
@@ -188,7 +189,8 @@ def comparacion_escenarios(tasa_escenario1, tasa_escenario2, tea_bono,
             f"🎯 Escenario Base",
             formato_moneda(vp_actual),
             delta=formato_moneda(diff_actual),
-            help=f"Tasa: {tea_bono}%"
+            help=f"Tasa: {tea_bono}%",
+            delta_color="inverse"
         )
 
     with col_res3:
@@ -197,7 +199,8 @@ def comparacion_escenarios(tasa_escenario1, tasa_escenario2, tea_bono,
             f"📈 Escenario Pesimista",
             formato_moneda(vp_esc2),
             delta=formato_moneda(diff2),
-            help=f"Tasa: {tasa_escenario2}%"
+            help=f"Tasa: {tasa_escenario2}%",
+            delta_color="inverse"
         )
 
     return vp_esc1, vp_actual, vp_esc2
@@ -282,14 +285,14 @@ def mostrar_resultados_completos(valor_nominal, tasa_cupon, frecuencia_bono,
     with col1:
         st.write(f"**Valor Nominal:** {formato_moneda(valor_nominal)}")
         st.write(f"**Tasa Cupón (TEA):** {tasa_cupon}%")
-        st.write(f"**Tasa Cupón Periódica:** {tasa_cupon_periodica * 100:.4f}%")
+        st.write(f"**Tasa Cupón Periódica:** {tasa_cupon_periodica * 100:.2f}%")
         st.write(f"**Cupón por Período:** {formato_moneda(cupon)}")
 
     with col2:
         st.write(f"**Frecuencia:** {frecuencia_bono}")
         st.write(f"**Plazo:** {plazo_bono} años ({total_periodos_bono} períodos)")
         st.write(f"**Tasa de Descuento (TEA):** {tea_bono}%")
-        st.write(f"**Tasa Descuento Periódica:** {tasa_descuento_periodica * 100:.4f}%")
+        st.write(f"**Tasa Descuento Periódica:** {tasa_descuento_periodica * 100:.2f}%")
 
     st.divider()
     st.markdown("<h3>🧠 Análisis Inteligente del Bono</h3>", unsafe_allow_html=True)
