@@ -5,7 +5,6 @@ from datetime import datetime
 from utils.utils import formato_moneda
 from utils.gemini import generar_analisis_bono
 
-
 def mostrar_metricas_bono(valor_presente_total, valor_nominal, cupon):
     """Muestra las métricas principales del bono"""
     col1, col2, col3, col4 = st.columns(4)
@@ -40,13 +39,11 @@ def mostrar_interpretacion(valor_presente_total, valor_nominal, tea_bono, tasa_c
     if valor_presente_total > valor_nominal:
         st.success(f"✅ **Bono con Prima (Sobre Par)**")
         st.write(f"- El VP es {formato_moneda(diferencia)} mayor que el valor nominal")
-        st.info(
-            f"💡 **Razón:** La tasa cupón ({tasa_cupon:.2f}%) es mayor que la tasa de descuento ({tea_bono:.2f}%), por lo que el bono vale más que su valor nominal.")
+        st.info(f"💡 **Razón:** La tasa cupón ({tasa_cupon:.2f}%) es mayor que la tasa de descuento ({tea_bono:.2f}%), por lo que el bono vale más que su valor nominal.")
     elif valor_presente_total < valor_nominal:
         st.warning(f"⚠️ **Bono con Descuento (Bajo Par)**")
         st.write(f"- El VP es {formato_moneda(diferencia)} menor que el valor nominal")
-        st.info(
-            f"💡 **Razón:** La tasa cupón ({tasa_cupon:.2f}%) es menor que la tasa de descuento ({tea_bono:.2f}%), por lo que el bono vale menos que su valor nominal.")
+        st.info(f"💡 **Razón:** La tasa cupón ({tasa_cupon:.2f}%) es menor que la tasa de descuento ({tea_bono:.2f}%), por lo que el bono vale menos que su valor nominal.")
     else:
         st.info("ℹ️ **Bono a la Par**")
         st.write("- El valor presente es igual al valor nominal")
@@ -320,7 +317,7 @@ def mostrar_resultados_completos(valor_nominal, tasa_cupon, frecuencia_bono,
 
     st.divider()
     st.markdown("<h3>🧠 Análisis Inteligente del Bono</h3>", unsafe_allow_html=True)
-
+    
     # Botón para generar análisis
     if st.button("📈 Obtener Análisis de Gemini", key="analisis_bono"):
         with st.spinner("🤖 Gemini está analizando la valoración del bono..."):
@@ -334,13 +331,13 @@ def mostrar_resultados_completos(valor_nominal, tasa_cupon, frecuencia_bono,
                 'valor_presente': valor_presente_total,
                 'cupon_periodico': cupon
             }
-
+            
             analisis_bono = generar_analisis_bono(datos_analisis_bono)
-
+            
             # Mostrar análisis en un acordeón
             with st.expander("📋 **Análisis Detallado del Bono**", expanded=True):
                 st.markdown(analisis_bono)
-
+                
     # Gráficos
     st.divider()
     st.subheader("🔎 Análisis Visual")
