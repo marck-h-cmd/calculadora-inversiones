@@ -331,59 +331,8 @@ def calcular_valoracion_bono(valor_nominal, tasa_cupon, frecuencia_bono, plazo_b
 
 
 def show_bonos(nombre):
-    st.header("📊 Módulo C: Valoración de Bonos")
+    st.header("📊 Bonos")
     st.markdown("Calcula el valor presente de un bono según sus características y pagos periódicos.")
-
-    # SECCIÓN DE EJEMPLO EDUCATIVO
-    with st.expander("📚 Ejemplo Práctico: Evaluación de Cartera de Bonos", expanded=False):
-        st.markdown("""
-        ### 🎓 Guía de Evaluación de Bonos
-
-        **Objetivo:** Aprender a comparar múltiples bonos para tomar decisiones de inversión informadas.
-
-        #### 📖 Conceptos Fundamentales
-
-        **Características principales de un Bono:**
-
-        1. **💎 Valor Nominal (VN):** Es el valor facial del bono, la cantidad que el emisor se 
-           compromete a pagar al tenedor al vencimiento. También llamado "valor par".
-
-        2. **💰 Cupón (Tasa Cupón TEA):** Es la tasa de interés anual que el bono paga sobre su 
-           valor nominal. Por ejemplo, un bono de S/1,000 con cupón del 8% paga S/80 anuales.
-
-        3. **⏱️ Plazo:** Tiempo hasta el vencimiento del bono, expresado en años. Define cuándo 
-           se devolverá el valor nominal y cuántos pagos de cupón se recibirán.
-
-        4. **📅 Frecuencia de Pago:** Indica cada cuánto tiempo se pagan los cupones 
-           (mensual, trimestral, semestral, anual, etc.). Afecta el flujo de caja del inversor.
-
-        5. **📊 Rendimiento Requerido (Tasa de Descuento):** Es la tasa de retorno que el 
-           inversor exige para comprar el bono, basada en el riesgo y alternativas del mercado.
-
-        **Tipos de Valoración:**
-
-        - **🔺 Bono con Prima (Sobre Par):** VP > VN  
-          Ocurre cuando la tasa cupón es mayor que el rendimiento requerido.  
-          El bono es atractivo porque paga más que las alternativas del mercado.
-
-        - **🔻 Bono con Descuento (Bajo Par):** VP < VN  
-          Ocurre cuando la tasa cupón es menor que el rendimiento requerido.  
-          El bono debe venderse más barato para compensar su menor tasa de interés.
-
-        - **➖ Bono a la Par:** VP = VN  
-          Ocurre cuando la tasa cupón iguala el rendimiento requerido del mercado.
-
-        ---
-
-        #### 🔍 Ejemplo Práctico
-        Este ejercicio muestra cómo evaluar una cartera de 3 bonos corporativos diferentes,
-        comparando sus características y determinando cuál ofrece mejor valor.
-        """)
-
-        st.divider()
-        st.subheader("🔍 Comparación de Bonos Corporativos")
-
-        # (Tu código existente del ejemplo aquí)
 
     # SECCIÓN PRINCIPAL: VALORACIÓN INDIVIDUAL
     st.divider()
@@ -648,39 +597,39 @@ def show_bonos(nombre):
                "La línea verde vertical marca tu tasa actual, y la línea roja horizontal el valor nominal.")
 
     # COMPARACIÓN DE ESCENARIOS
-    with st.expander("🔄 Comparar con diferentes tasas", expanded=False):
-        col_comp1, col_comp2 = st.columns(2)
+    st.subheader("🔄 Comparar con diferentes tasas")
+    col_comp1, col_comp2 = st.columns(2)
 
-        with col_comp1:
-            tasa_escenario1 = st.number_input(
-                "Escenario Optimista - Tasa (%)",
-                min_value=0.0,
-                max_value=50.0,
-                value=tea_bono - 2.0 if tea_bono > 2.0 else 1.0,
-                step=0.1,
-                key="tasa_esc1_bonos"
-            )
-
-        with col_comp2:
-            tasa_escenario2 = st.number_input(
-                "Escenario Pesimista - Tasa (%)",
-                min_value=0.0,
-                max_value=50.0,
-                value=tea_bono + 2.0,
-                step=0.1,
-                key="tasa_esc2_bonos"
-            )
-
-        # Mostrar comparación
-        comparacion_escenarios(
-            tasa_escenario1, tasa_escenario2, tea_bono,
-            valor_nominal, resultados['cupon'], resultados['total_periodos_bono'],
-            frecuencia_bono, convertir_tea_a_periodica
+    with col_comp1:
+        tasa_escenario1 = st.number_input(
+            "Escenario Optimista - Tasa (%)",
+            min_value=0.0,
+            max_value=50.0,
+            value=tea_bono - 2.0 if tea_bono > 2.0 else 1.0,
+            step=0.1,
+            key="tasa_esc1_bonos"
         )
 
-        st.caption("💡 **Interpretación:** Los escenarios muestran cómo cambiaría el valor del bono "
-                   "si las condiciones del mercado mejoran (tasa baja) o empeoran (tasa alta). "
-                   "Esto te ayuda a evaluar el riesgo de tasa de interés.")
+    with col_comp2:
+        tasa_escenario2 = st.number_input(
+            "Escenario Pesimista - Tasa (%)",
+            min_value=0.0,
+            max_value=50.0,
+            value=tea_bono + 2.0,
+            step=0.1,
+            key="tasa_esc2_bonos"
+        )
+
+    # Mostrar comparación
+    comparacion_escenarios(
+        tasa_escenario1, tasa_escenario2, tea_bono,
+        valor_nominal, resultados['cupon'], resultados['total_periodos_bono'],
+        frecuencia_bono, convertir_tea_a_periodica
+    )
+
+    st.caption("💡 **Interpretación:** Los escenarios muestran cómo cambiaría el valor del bono "
+                "si las condiciones del mercado mejoran (tasa baja) o empeoran (tasa alta). "
+                "Esto te ayuda a evaluar el riesgo de tasa de interés.")
 
     # SECCIÓN: EXPORTACIÓN
     st.divider()

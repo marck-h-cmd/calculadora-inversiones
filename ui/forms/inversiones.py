@@ -13,6 +13,33 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from utils.gemini import generar_analisis_inversiones
 
+st.markdown("""
+<style>
+/* Contenedor principal de métricas */
+.metric-container .stMetric {
+    background-color: #d1fae5 !important;  /* Verde clarito */
+    color: black !important;               /* Texto negro */
+    border-radius: 10px;                   /* Bordes redondeados */
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Botones verdes brillantes */
+.stButton>button {
+    background-color: #10B981 !important;  /* Verde brillante */
+    color: white !important;               /* Texto blanco */
+    font-weight: bold;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    border: none;
+}
+
+.stButton>button:hover {
+    background-color: #059669 !important;  /* Verde más intenso al pasar el mouse */
+}
+</style>
+""", unsafe_allow_html=True)
+
 def show_inversiones(nombre):
     st.divider()
     st.markdown("<br><h2>📈 Inversiones</h2>"
@@ -20,7 +47,7 @@ def show_inversiones(nombre):
                 , unsafe_allow_html=True)
     
     # Parámetros y datos de entrada
-    st.markdown("<br><h3>✏️ Parámetros y datos de entrada</h3>", unsafe_allow_html=True)
+    st.markdown("<br><h3> Parámetros y datos de entrada</h3>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -87,13 +114,13 @@ def show_inversiones(nombre):
             plazo_anios = edad_jubilacion - edad_actual
 
 
-    st.markdown("<br><h3>🎯 Opciones de jubilación</h3>", unsafe_allow_html=True)
+    st.markdown("<br><h3>Opciones de jubilación</h3>", unsafe_allow_html=True)
 
     tipo_retiro = st.radio("Tipo de Retiro", ('Cobro total', 'Pensión Mensual'), help="Proyección de retiro (Cobro total al momento de la jubilación)  -  Pensión Mensual (Pago de dividendos mensuales)", horizontal=True)
 
     if tipo_retiro == 'Pensión Mensual':
         if tipo_impuesto != "Bolsa Local (5%)":
-            st.warning("⚠️ Debes seleccionar el tipo de impuesto a la renta --> Bolsa Local (5%)")
+            st.warning("⚠️Debes seleccionar el tipo de impuesto a la renta --> Bolsa Local (5%)")
         else:
             tea_retiro = st.number_input(
                 "TEA Durante Retiro (%)",
@@ -171,27 +198,27 @@ def show_inversiones(nombre):
 
         # Métricas principales
         st.divider()
-        st.markdown("<h3>🚀 Resultados</h3>", unsafe_allow_html=True)
+        st.markdown("<h3> Resultados</h3>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         
         if tipo_retiro == "Cobro total":
             with col1:
                 st.metric(
-                    "💰 Ingresos totales",
+                    " Ingresos totales",
                     formato_moneda(saldo_final),
                     f"A los {edad_actual + plazo_anios} años"
                 )
             
             with col2:
                 st.metric(
-                    "💵 Costos totales",
+                    " Costos totales",
                     formato_moneda(costos_totales),
                     "Capital invertido"
                 )
             
             with col3:
                 st.metric(
-                    "📈 Renta total",
+                    " Renta total",
                     formato_moneda(ganancia_total),
                     f"{((ganancia_total/costos_totales)*100):.2f}% ROI"
                 )
@@ -200,7 +227,7 @@ def show_inversiones(nombre):
             col1, col2 = st.columns(2)
             with col1:
                 st.metric(
-                    f"😭 Impuestos",
+                    f" Impuestos",
                     formato_moneda(impuesto),
                     delta=f"-{valor_impuesto*100}%",
                     delta_color="normal"
@@ -215,7 +242,7 @@ def show_inversiones(nombre):
                     delta_texto = "Mala pérdida"
 
                 st.metric(
-                    "🎁🤑 Cobro total a retirar",
+                    " Cobro total a retirar",
                     formato_moneda(resultado),
                     delta=delta_texto,
                 )
@@ -361,7 +388,7 @@ def show_inversiones(nombre):
 
         st.subheader("🔄 Comparación de Escenarios")
         comparar = st.radio(
-            "📊 Deseo comparar",
+            "Deseo comparar",
             [
                 "Comparar con otra edad de jubilación",
                 "Comparar con otra Tasa Efectiva Anual (%)"
@@ -490,11 +517,11 @@ def show_inversiones(nombre):
                 c1, c2 = st.columns(2)
                 with c1:
                     st.markdown(f"**Opción A**")
-                    st.metric("🎁🤑 Cobro total a retirar", formato_moneda(cobro_total_1))
+                    st.metric(" Cobro total a retirar", formato_moneda(cobro_total_1))
 
                 with c2:
                     st.markdown(f"**Opción B**")
-                    st.metric("🎁🤑 Cobro total a retirar", formato_moneda(cobro_total_2))
+                    st.metric(" Cobro total a retirar", formato_moneda(cobro_total_2))
                     
                 # Comparación simple: cuál conviene más
                 mejor = "A" if cobro_total_1 > cobro_total_2 else "B"
