@@ -251,7 +251,7 @@ Este proyecto es de uso educativo.
 - **[Felix]** - [@usuario-github2](https://github.com/Felixby2004)
 - **[Dan]** - [@usuario-github3](https://github.com/Dan101111111)
 - **[Villa]** - [@usuario-github4](https://github.com/DrkonVilla)
-- **[Geri]** - [@usuario-github4](https://github.com/YeriBoooo)
+- **[Geri]** - [@usuario-github5](https://github.com/YeriBoooo)
 
 ---
 
