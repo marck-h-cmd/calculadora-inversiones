@@ -248,9 +248,10 @@ Este proyecto es de uso educativo.
 ## 👥 Autores
 
 - **[Marck]** - [@usuario-github1](https://github.com/marck-h-cmd)
-- **[TheFelix]** - [@usuario-github2](https://github.com/Felixby2004)
+- **[Felix]** - [@usuario-github2](https://github.com/Felixby2004)
 - **[Dan]** - [@usuario-github3](https://github.com/Dan101111111)
 - **[Villa]** - [@usuario-github4](https://github.com/DrkonVilla)
+- **[Geri]** - [@usuario-github4](https://github.com/YeriBoooo)
 
 ---
 
